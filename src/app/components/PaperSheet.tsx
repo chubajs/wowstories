@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface PaperSheetProps {
   onGenerateStory: (story: string) => void;
@@ -18,6 +18,8 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
   const [isErasing, setIsErasing] = useState(false);
   const [storyInfo, setStoryInfo] = useState<StoryInfo | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const [title, setTitle] = useState('');
+  const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
 
   const handleGenerate = async () => {
     if (userInput.trim() && !isGenerating) {
@@ -75,6 +77,21 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
 
         onGenerateStory(generatedStory);
 
+        // Генерация заголовка
+        setIsGeneratingTitle(true);
+        const titleResponse = await fetch('/api/generateTitle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ story: generatedStory }),
+        });
+
+        if (titleResponse.ok) {
+          const { title } = await titleResponse.json();
+          setTitle(title);
+        } else {
+          throw new Error('Failed to generate title');
+        }
+
         const saveResponse = await fetch('/api/saveStory', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -100,6 +117,7 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
         console.error(error);
       } finally {
         setIsGenerating(false);
+        setIsGeneratingTitle(false);
       }
     }
   };
@@ -121,6 +139,7 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
     setDisplayContent('');
     setStoryInfo(null);
     setUserInput('');
+    setTitle('');
   };
 
   const Cursor = () => (
@@ -162,6 +181,18 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
         className="bg-white p-6 rounded-lg shadow-md font-neucha"
         style={{ minHeight: '300px' }}
       >
+        <AnimatePresence>
+          {title && (
+            <motion.h2
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="text-2xl font-bold mb-4 text-center"
+            >
+              {title}
+            </motion.h2>
+          )}
+        </AnimatePresence>
         {!isGenerating && !isErasing && !storyInfo && (
           <textarea
             value={userInput}
@@ -192,6 +223,11 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
           >
             {displayContent}
             {(isGenerating || isErasing) && <Cursor />}
+          </div>
+        )}
+        {isGeneratingTitle && (
+          <div className="mt-4 text-center text-gray-600">
+            Генерация заголовка...
           </div>
         )}
       </motion.div>
