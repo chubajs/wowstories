@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { FiRefreshCw, FiCopy } from 'react-icons/fi';
 
 interface PaperSheetProps {
@@ -22,7 +22,6 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
   const contentRef = useRef<HTMLDivElement>(null);
   const [titleStatus, setTitleStatus] = useState<'idle' | 'thinking' | 'erasing' | 'typing' | 'done'>('idle');
   const [titleText, setTitleText] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
 
   const handleGenerate = async () => {
@@ -80,8 +79,6 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
         }
 
         onGenerateStory(generatedStory);
-
-        setIsSaving(true);
 
         // Анимация "Придумываю название..."
         setTitleStatus('thinking');
@@ -146,7 +143,6 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
         setTitleStatus('idle');
       } finally {
         setIsGenerating(false);
-        setIsSaving(false);
       }
     }
   };
