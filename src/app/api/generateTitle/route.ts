@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       model: MODEL,
       messages: [
         { role: 'system', content: 'Вы - креативный писатель, который придумывает короткие и интересные названия для историй.' },
-        { role: 'user', content: `Придумайте короткое и интересное название для следующей истории, ответь только названием, без объяснений, без вариантов: ${story.substring(0, 500)}...` },
+        { role: 'user', content: `Придумайте короткое и интересное название для следующей истории, ответь только названием, без объяс��ений, без вариантов: ${story.substring(0, 500)}...` },
       ],
       max_tokens: 30,
     }),
@@ -33,7 +33,10 @@ export async function POST(req: NextRequest) {
   }
 
   const data = await response.json();
-  const title = data.choices[0].message.content.trim();
+  let title = data.choices[0].message.content.trim();
+  
+  // Удаляем кавычки в начале и конце строки, если они есть
+  title = title.replace(/^["']|["']$/g, '');
 
   return NextResponse.json({ title });
 }

@@ -18,8 +18,9 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
   const [isErasing, setIsErasing] = useState(false);
   const [storyInfo, setStoryInfo] = useState<StoryInfo | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const [title, setTitle] = useState('');
-  const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
+  const [titleStatus, setTitleStatus] = useState<'idle' | 'thinking' | 'erasing' | 'typing' | 'done'>('idle');
+  const [titleText, setTitleText] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleGenerate = async () => {
     if (userInput.trim() && !isGenerating) {
@@ -77,8 +78,17 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
 
         onGenerateStory(generatedStory);
 
+        setIsSaving(true);
+
+        // Анимация "Придумываю название..."
+        setTitleStatus('thinking');
+        const thinkingText = "Придумываю название...";
+        for (let i = 0; i <= thinkingText.length; i++) {
+          setTitleText(thinkingText.slice(0, i));
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+
         // Генерация заголовка
-        setIsGeneratingTitle(true);
         const titleResponse = await fetch('/api/generateTitle', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -87,37 +97,52 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
 
         if (titleResponse.ok) {
           const { title } = await titleResponse.json();
-          setTitle(title);
+          
+          // Анимация стирания "Придумываю название..."
+          setTitleStatus('erasing');
+          for (let i = thinkingText.length; i >= 0; i--) {
+            setTitleText(thinkingText.slice(0, i));
+            await new Promise(resolve => setTimeout(resolve, 50));
+          }
+
+          // Анимация вывода названия
+          setTitleStatus('typing');
+          for (let i = 0; i <= title.length; i++) {
+            setTitleText(title.slice(0, i));
+            await new Promise(resolve => setTimeout(resolve, 50));
+          }
+          setTitleStatus('done');
+
+          const saveResponse = await fetch('/api/saveStory', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: title,
+              content: generatedStory,
+              prompt,
+              model,
+            }),
+          });
+
+          if (saveResponse.ok) {
+            const savedStory = await saveResponse.json();
+            setStoryInfo({
+              number: savedStory.number,
+              createdAt: new Date(savedStory.createdAt).toLocaleString(),
+              model: savedStory.model,
+            });
+          } else {
+            throw new Error('Failed to save story');
+          }
         } else {
           throw new Error('Failed to generate title');
         }
-
-        const saveResponse = await fetch('/api/saveStory', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: prompt,
-            content: generatedStory,
-            prompt,
-            model,
-          }),
-        });
-
-        if (saveResponse.ok) {
-          const savedStory = await saveResponse.json();
-          setStoryInfo({
-            number: savedStory.number,
-            createdAt: new Date(savedStory.createdAt).toLocaleString(),
-            model: savedStory.model,
-          });
-        } else {
-          throw new Error('Failed to save story');
-        }
       } catch (error) {
         console.error(error);
+        setTitleStatus('idle');
       } finally {
         setIsGenerating(false);
-        setIsGeneratingTitle(false);
+        setIsSaving(false);
       }
     }
   };
@@ -139,13 +164,14 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
     setDisplayContent('');
     setStoryInfo(null);
     setUserInput('');
-    setTitle('');
+    setTitleText('');
+    setTitleStatus('idle');
   };
 
   const Cursor = () => (
     <motion.span
       className="inline-block bg-blue-500"
-      style={{ width: '10px', height: '1em', marginLeft: '2px' }}
+      style={{ width: '0.6em', height: '1em', marginLeft: '2px' }}
       animate={{ opacity: [1, 0, 1] }}
       transition={{ duration: 0.8, repeat: Infinity }}
     />
@@ -154,25 +180,31 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
   return (
     <div className="w-full max-w-2xl mx-auto">
       {storyInfo && (
-        <>
-          <div className="flex justify-end mb-4">
-            <button
-              onClick={handleNewStory}
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors font-jetbrains-mono text-sm"
-            >
-              Новая история
-            </button>
-          </div>
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-4 p-3 bg-gray-100 rounded-lg shadow-md text-xs text-gray-600 flex justify-between items-center font-jetbrains-mono"
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={handleNewStory}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors font-jetbrains-mono text-sm"
           >
-            <span className="font-semibold">#{storyInfo.number}</span>
-            <span>{storyInfo.createdAt}</span>
-            <span className="text-blue-600">{storyInfo.model}</span>
-          </motion.div>
-        </>
+            Новая история
+          </button>
+        </div>
+      )}
+      {(storyInfo || isSaving) && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-4 p-3 bg-gray-100 rounded-lg shadow-md text-xs text-gray-600 flex justify-between items-center font-jetbrains-mono"
+        >
+          {isSaving ? (
+            <span>Сохраняем...</span>
+          ) : (
+            <>
+              <span className="font-semibold">#{storyInfo!.number}</span>
+              <span>{storyInfo!.createdAt}</span>
+              <span className="text-blue-600">{storyInfo!.model}</span>
+            </>
+          )}
+        </motion.div>
       )}
       <motion.div
         initial={{ opacity: 0, y: 50 }}
@@ -181,19 +213,13 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
         className="bg-white p-6 rounded-lg shadow-md font-neucha"
         style={{ minHeight: '300px' }}
       >
-        <AnimatePresence>
-          {title && (
-            <motion.h2
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="text-2xl font-bold mb-4 text-center"
-            >
-              {title}
-            </motion.h2>
-          )}
-        </AnimatePresence>
-        {!isGenerating && !isErasing && !storyInfo && (
+        {titleStatus !== 'idle' && (
+          <div className={`mb-4 text-center ${titleStatus === 'thinking' || titleStatus === 'erasing' ? 'font-jetbrains-mono text-xs' : 'font-neucha text-2xl font-bold'}`}>
+            {titleText}
+            {(titleStatus === 'thinking' || titleStatus === 'erasing' || titleStatus === 'typing') && <Cursor />}
+          </div>
+        )}
+        {titleStatus === 'idle' && !isGenerating && !isErasing && !storyInfo && (
           <textarea
             value={userInput}
             onChange={(e) => setUserInput(e.target.value)}
@@ -223,11 +249,6 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
           >
             {displayContent}
             {(isGenerating || isErasing) && <Cursor />}
-          </div>
-        )}
-        {isGeneratingTitle && (
-          <div className="mt-4 text-center text-gray-600">
-            Генерация заголовка...
           </div>
         )}
       </motion.div>
