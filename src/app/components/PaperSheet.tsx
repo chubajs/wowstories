@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface PaperSheetProps {
   onGenerateStory: (story: string) => void;
@@ -12,18 +12,24 @@ interface StoryInfo {
 }
 
 const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
-  const [prompt, setPrompt] = useState('');
-  const [generatedStory, setGeneratedStory] = useState('');
+  const [content, setContent] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [storyInfo, setStoryInfo] = useState<StoryInfo | null>(null);
-  const storyRef = useRef<HTMLDivElement>(null);
+  const [isErasing, setIsErasing] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (prompt.trim() && !isGenerating) {
+  const handleGenerate = async () => {
+    if (content.trim() && !isGenerating) {
+      const prompt = content;
       setIsGenerating(true);
-      setGeneratedStory('');
-      setStoryInfo(null);
+      setIsErasing(true);
+
+      // Анимация стирания
+      for (let i = content.length; i >= 0; i--) {
+        await new Promise(resolve => setTimeout(resolve, 20));
+        setContent(content.slice(0, i));
+      }
+      setIsErasing(false);
 
       const response = await fetch('/api/generateStory', {
         method: 'POST',
@@ -42,7 +48,7 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
 
-      let fullStory = '';
+      let generatedStory = '';
       while (true) {
         const { done, value } = await reader!.read();
         if (done) break;
@@ -53,8 +59,9 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
             try {
               const data = JSON.parse(line.slice(6));
               const content = data.choices[0]?.delta?.content || '';
-              fullStory += content;
-              setGeneratedStory(fullStory);
+              generatedStory += content;
+              setContent(generatedStory);
+              await new Promise(resolve => setTimeout(resolve, 10)); // Небольшая задержка для эффекта печатания
             } catch (error) {
               console.error('Error parsing JSON:', error);
             }
@@ -63,7 +70,7 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
       }
 
       setIsGenerating(false);
-      onGenerateStory(fullStory);
+      onGenerateStory(generatedStory);
 
       // Сохраняем историю
       const saveResponse = await fetch('/api/saveStory', {
@@ -71,7 +78,7 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: prompt,
-          content: fullStory,
+          content: generatedStory,
           prompt,
           model,
         }),
@@ -91,50 +98,62 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
   };
 
   useEffect(() => {
-    if (storyRef.current) {
-      storyRef.current.scrollTop = storyRef.current.scrollHeight;
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
-  }, [generatedStory]);
+  }, [content]);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 50 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="bg-yellow-50 p-6 rounded-lg shadow-md max-w-2xl w-full"
-    >
-      <form onSubmit={handleSubmit}>
-        <textarea
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Введите подсказку для истории..."
-          className="w-full h-32 p-2 mb-4 border border-gray-300 rounded resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-          disabled={isGenerating}
-        />
-        <button
-          type="submit"
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
-          disabled={isGenerating}
+    <div className="w-full max-w-2xl mx-auto">
+      {storyInfo && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-4 p-2 bg-gray-100 rounded text-sm text-gray-600"
         >
-          {isGenerating ? 'Генерация...' : 'Создать историю'}
-        </button>
-      </form>
-      {generatedStory && (
-        <div className="mt-4">
-          {storyInfo && (
-            <div className="mb-2 text-sm text-gray-600">
-              История #{storyInfo.number} | Создана: {storyInfo.createdAt} | Модель: {storyInfo.model}
-            </div>
-          )}
-          <div
-            ref={storyRef}
-            className="p-4 bg-white rounded shadow-inner h-64 overflow-y-auto"
-          >
-            <p className="whitespace-pre-wrap">{generatedStory}</p>
-          </div>
-        </div>
+          История #{storyInfo.number} | Создана: {storyInfo.createdAt} | Модель: {storyInfo.model}
+        </motion.div>
       )}
-    </motion.div>
+      <motion.div
+        initial={{ opacity: 0, y: 50 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="bg-white p-6 rounded-lg shadow-md relative overflow-hidden"
+        style={{ minHeight: '300px' }}
+      >
+        <textarea
+          ref={textareaRef}
+          value={content}
+          onChange={(e) => !isGenerating && setContent(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              handleGenerate();
+            }
+          }}
+          placeholder={isGenerating ? '' : "Введите подсказку для истории и нажмите Enter..."}
+          className="w-full h-full p-2 border-none resize-none focus:outline-none bg-transparent"
+          disabled={isGenerating}
+          style={{
+            backgroundImage: 'repeating-linear-gradient(transparent, transparent 31px, #ccc 31px, #ccc 32px)',
+            lineHeight: '32px',
+            padding: '8px 10px',
+          }}
+        />
+        <AnimatePresence>
+          {isErasing && (
+            <motion.div
+              initial={{ opacity: 0, x: '100%' }}
+              animate={{ opacity: 1, x: '0%' }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="absolute right-0 top-0 bottom-0 w-1 bg-blue-500"
+            />
+          )}
+        </AnimatePresence>
+      </motion.div>
+    </div>
   );
 };
 
