@@ -7,6 +7,7 @@ interface PaperSheetProps {
 }
 
 interface StoryInfo {
+  id: string;
   number: number;
   createdAt: string;
   model: string;
@@ -129,6 +130,7 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
           if (saveResponse.ok) {
             const savedStory = await saveResponse.json();
             setStoryInfo({
+              id: savedStory.id,
               number: savedStory.number,
               createdAt: new Date(savedStory.createdAt).toLocaleString(),
               model: savedStory.model,
@@ -181,7 +183,7 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
 
   const handleCopyLink = () => {
     if (storyInfo) {
-      const url = `${window.location.origin}/story/${storyInfo.number}`;
+      const url = `${window.location.origin}/story/${storyInfo.id}`;
       navigator.clipboard.writeText(url);
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
@@ -210,7 +212,7 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
             <div className="flex items-center">
               <input
                 type="text"
-                value={`${window.location.origin}/story/${storyInfo.number}`}
+                value={`${window.location.origin}/story/${storyInfo.id}`}
                 readOnly
                 className="mr-2 px-2 py-1 border rounded text-sm"
               />

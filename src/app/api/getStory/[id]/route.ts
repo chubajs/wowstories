@@ -5,15 +5,11 @@ export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const id = parseInt(params.id);
-
-  if (isNaN(id)) {
-    return NextResponse.json({ error: 'Invalid story number' }, { status: 400 });
-  }
+  const id = params.id;
 
   try {
     const story = await prisma.story.findUnique({
-      where: { number: id },
+      where: { id: id },
     });
 
     if (!story) {
