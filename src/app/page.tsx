@@ -16,7 +16,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-col items-center justify-start py-8 px-4">
-      <h1 className="text-3xl font-bold mb-4 font-neucha">Офигенные истории</h1>
+      <h1 className="text-3xl font-bold mb-4 font-jetbrains-mono">Офигенные истории</h1>
       <PaperSheet onGenerateStory={handleGenerateStory} />
       <Footer />
     </div>

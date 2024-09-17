@@ -136,20 +136,22 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
     <div className="w-full max-w-2xl mx-auto">
       {storyInfo && (
         <>
-          <button
-            onClick={handleNewStory}
-            className="mb-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors font-neucha"
-          >
-            Новая история
-          </button>
+          <div className="flex justify-end mb-4">
+            <button
+              onClick={handleNewStory}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors font-jetbrains-mono text-sm"
+            >
+              Новая история
+            </button>
+          </div>
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-4 p-2 bg-gray-100 rounded text-sm text-gray-600 flex justify-between items-center font-jetbrains-mono"
+            className="mb-4 p-3 bg-gray-100 rounded-lg shadow-md text-xs text-gray-600 flex justify-between items-center font-jetbrains-mono"
           >
-            <span>#{storyInfo.number}</span>
+            <span className="font-semibold">#{storyInfo.number}</span>
             <span>{storyInfo.createdAt}</span>
-            <span>{storyInfo.model}</span>
+            <span className="text-blue-600">{storyInfo.model}</span>
           </motion.div>
         </>
       )}
@@ -168,8 +170,8 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
             className="w-full h-full border-none resize-none focus:outline-none bg-transparent font-neucha"
             style={{
               padding: '8px 10px',
-              fontSize: '16px',
-              lineHeight: '1.5',
+              fontSize: '18px',
+              lineHeight: '1.6',
               whiteSpace: 'pre-wrap',
               overflowWrap: 'break-word',
             }}
@@ -182,8 +184,8 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
             className="w-full h-full whitespace-pre-wrap break-words font-neucha"
             style={{
               padding: '8px 10px',
-              fontSize: '16px',
-              lineHeight: '1.5',
+              fontSize: '18px',
+              lineHeight: '1.6',
               overflowWrap: 'break-word',
               overflowY: 'auto',
             }}
