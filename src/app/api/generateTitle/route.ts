@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const SITE_URL = process.env.SITE_URL || 'https://wow.bulaev.ai';
 const SITE_NAME = 'wowStories';
-const MODEL = 'mistralai/pixtral-12b:free';
+const MODEL = 'google/gemma-2-27b-it';
 
 export const runtime = 'edge';
 
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       model: MODEL,
       messages: [
         { role: 'system', content: 'Вы - креативный писатель, который придумывает короткие и интересные названия для историй.' },
-        { role: 'user', content: `Придумайте короткое и интересное название для следующей истории, ответь только названием, без объяс��ений, без вариантов: ${story.substring(0, 500)}...` },
+        { role: 'user', content: `Придумай короткое и интересное название для следующей истории, ответь только названием, без объяснений, без вариантов. Если в названии есть буква ё, используй букву ё, а не е: ${story.substring(0, 500)}...` },
       ],
       max_tokens: 30,
     }),
