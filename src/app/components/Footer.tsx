@@ -2,7 +2,7 @@ import { FaTelegram } from "react-icons/fa";
 
 export default function Footer() {
   return (
-    <footer className="w-full py-4 text-center">
+    <footer className="w-full py-4 text-center font-jetbrains-mono">
       <a
         href="https://t.me/sergiobulaev"
         target="_blank"
@@ -11,6 +11,9 @@ export default function Footer() {
       >
         Подпишитесь на мой канал про AI
       </a>
+      <p className="mt-2 text-sm text-gray-600">
+        © Sergey Bulaev 2024
+      </p>
     </footer>
   );
 }

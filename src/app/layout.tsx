@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
+import { Neucha, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
+const neucha = Neucha({ 
+  weight: '400',
+  subsets: ['latin', 'cyrillic'],
+  variable: '--font-neucha',
 });
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
+
+const jetbrainsMono = JetBrains_Mono({ 
+  subsets: ['latin', 'cyrillic'],
+  variable: '--font-jetbrains-mono',
 });
 
 export const metadata: Metadata = {
@@ -26,7 +26,7 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-yellow-300`}
+        className={`${neucha.variable} ${jetbrainsMono.variable} antialiased bg-[#fffdf0] text-[#171717]`}
       >
         {children}
       </body>

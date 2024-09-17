@@ -9,8 +9,12 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+        background: "#fffdf0",
+        foreground: "#171717",
+      },
+      fontFamily: {
+        neucha: ['var(--font-neucha)', 'cursive'],
+        'jetbrains-mono': ['var(--font-jetbrains-mono)', 'monospace'],
       },
     },
   },
