@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { FiRefreshCw } from 'react-icons/fi'; // Добавьте эту строку
 
 interface PaperSheetProps {
   onGenerateStory: (story: string) => void;
@@ -183,8 +184,9 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
         <div className="flex justify-end mb-4">
           <button
             onClick={handleNewStory}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors font-jetbrains-mono text-sm"
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors font-jetbrains-mono text-sm flex items-center"
           >
+            <FiRefreshCw className="mr-2" /> {/* Добавленная иконка */}
             Новая история
           </button>
         </div>
