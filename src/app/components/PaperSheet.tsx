@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiRefreshCw } from 'react-icons/fi'; // Добавьте эту строку
+import { FiRefreshCw, FiCopy } from 'react-icons/fi';
 
 interface PaperSheetProps {
   onGenerateStory: (story: string) => void;
@@ -22,6 +22,7 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
   const [titleStatus, setTitleStatus] = useState<'idle' | 'thinking' | 'erasing' | 'typing' | 'done'>('idle');
   const [titleText, setTitleText] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
 
   const handleGenerate = async () => {
     if (userInput.trim() && !isGenerating) {
@@ -178,35 +179,51 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
     />
   );
 
+  const handleCopyLink = () => {
+    if (storyInfo) {
+      const url = `${window.location.origin}/story/${storyInfo.number}`;
+      navigator.clipboard.writeText(url);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    }
+  };
+
   return (
     <div className="w-full max-w-2xl mx-auto">
       {storyInfo && (
-        <div className="flex justify-end mb-4">
-          <button
-            onClick={handleNewStory}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors font-jetbrains-mono text-sm flex items-center"
+        <>
+          <div className="flex justify-end mb-4">
+            <button
+              onClick={handleNewStory}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors font-jetbrains-mono text-sm flex items-center"
+            >
+              <FiRefreshCw className="mr-2" />
+              Новая история
+            </button>
+          </div>
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4 p-3 bg-gray-100 rounded-lg shadow-md flex justify-between items-center font-jetbrains-mono"
           >
-            <FiRefreshCw className="mr-2" /> {/* Добавленная иконка */}
-            Новая история
-          </button>
-        </div>
-      )}
-      {(storyInfo || isSaving) && (
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-4 p-3 bg-gray-100 rounded-lg shadow-md text-xs text-gray-600 flex justify-between items-center font-jetbrains-mono"
-        >
-          {isSaving ? (
-            <span>Сохраняем...</span>
-          ) : (
-            <>
-              <span className="font-semibold">#{storyInfo!.number}</span>
-              <span>{storyInfo!.createdAt}</span>
-              <span className="text-blue-600">{storyInfo!.model}</span>
-            </>
-          )}
-        </motion.div>
+            <span className="text-sm">Поделиться историей:</span>
+            <div className="flex items-center">
+              <input
+                type="text"
+                value={`${window.location.origin}/story/${storyInfo.number}`}
+                readOnly
+                className="mr-2 px-2 py-1 border rounded text-sm"
+              />
+              <button
+                onClick={handleCopyLink}
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-sm flex items-center"
+              >
+                <FiCopy className="mr-2" />
+                {isCopied ? 'Скопировано!' : 'Копировать'}
+              </button>
+            </div>
+          </motion.div>
+        </>
       )}
       <motion.div
         initial={{ opacity: 0, y: 50 }}
@@ -254,6 +271,17 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
           </div>
         )}
       </motion.div>
+      {storyInfo && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-4 p-3 bg-gray-100 rounded-lg shadow-md text-xs text-gray-600 flex justify-between items-center font-jetbrains-mono"
+        >
+          <span className="font-semibold">#{storyInfo.number}</span>
+          <span>{storyInfo.createdAt}</span>
+          <span className="text-blue-600">{storyInfo.model}</span>
+        </motion.div>
+      )}
     </div>
   );
 };
