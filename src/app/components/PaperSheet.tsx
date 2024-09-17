@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiRefreshCw, FiCopy } from 'react-icons/fi';
+import { FiRefreshCw, FiCopy, FiRepeat, FiPlus } from 'react-icons/fi';
 
 interface PaperSheetProps {
   onGenerateStory: (story: string) => void;
@@ -23,16 +23,23 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
   const [titleStatus, setTitleStatus] = useState<'idle' | 'thinking' | 'erasing' | 'typing' | 'done'>('idle');
   const [titleText, setTitleText] = useState('');
   const [isCopied, setIsCopied] = useState(false);
+  const [originalPrompt, setOriginalPrompt] = useState('');
 
-  const handleGenerate = async () => {
-    if (userInput.trim() && !isGenerating) {
-      const prompt = userInput;
+  const handleGenerate = async (prompt: string) => {
+    if (prompt.trim() && !isGenerating) {
+      setOriginalPrompt(prompt); // Store the original prompt
       setIsGenerating(true);
       setIsErasing(true);
 
+      // Clear existing content
+      setDisplayContent('');
+      setStoryInfo(null);
+      setTitleText('');
+      setTitleStatus('idle');
+
       // Анимация стирания
-      for (let i = userInput.length; i >= 0; i--) {
-        setDisplayContent(userInput.slice(0, i));
+      for (let i = prompt.length; i >= 0; i--) {
+        setDisplayContent(prompt.slice(0, i));
         await new Promise((resolve) => setTimeout(resolve, 80));
       }
 
@@ -105,7 +112,7 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
             await new Promise(resolve => setTimeout(resolve, 50));
           }
 
-          // Анимация вывода названия
+          // Анимация вывода на��вания
           setTitleStatus('typing');
           for (let i = 0; i <= title.length; i++) {
             setTitleText(title.slice(0, i));
@@ -147,16 +154,16 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
     }
   };
 
-  useEffect(() => {
-    if (contentRef.current) {
-      contentRef.current.scrollTop = contentRef.current.scrollHeight;
-    }
-  }, [displayContent]);
+  const handleRegenerate = async () => {
+    if (originalPrompt && !isGenerating) {
+      // Clear all information except the prompt
+      setDisplayContent('');
+      setStoryInfo(null);
+      setTitleText('');
+      setTitleStatus('idle');
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleGenerate();
+      // Start a new generation with the same prompt
+      await handleGenerate(originalPrompt);
     }
   };
 
@@ -166,6 +173,20 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
     setUserInput('');
     setTitleText('');
     setTitleStatus('idle');
+    setOriginalPrompt('');
+  };
+
+  useEffect(() => {
+    if (contentRef.current) {
+      contentRef.current.scrollTop = contentRef.current.scrollHeight;
+    }
+  }, [displayContent]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleGenerate(userInput);
+    }
   };
 
   const Cursor = () => (
@@ -190,13 +211,20 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
     <div className="w-full max-w-2xl mx-auto">
       {storyInfo && (
         <>
-          <div className="flex justify-end mb-4">
+          <div className="flex justify-end mb-4 space-x-2">
             <button
               onClick={handleNewStory}
               className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors font-jetbrains-mono text-sm flex items-center"
             >
-              <FiRefreshCw className="mr-2" />
+              <FiPlus className="mr-2" />
               Новая история
+            </button>
+            <button
+              onClick={handleRegenerate}
+              className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors font-jetbrains-mono text-sm flex items-center"
+            >
+              <FiRepeat className="mr-2" />
+              Регенерация
             </button>
           </div>
           <motion.div
