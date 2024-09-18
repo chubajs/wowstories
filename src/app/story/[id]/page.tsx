@@ -150,7 +150,7 @@ export default function StoryPage() {
                 </Link>
               </motion.div>
 
-              <Footer />
+              <Footer isStoryPage={true} />
 
               <Link href="/" className="mt-8 flex justify-center">
                 <Image
