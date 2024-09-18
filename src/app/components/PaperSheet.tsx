@@ -112,7 +112,7 @@ const PaperSheet: React.FC<PaperSheetProps> = ({ onGenerateStory }) => {
             await new Promise(resolve => setTimeout(resolve, 50));
           }
 
-          // Анимация вывода на��вания
+          // Анимация вывода названия
           setTitleStatus('typing');
           for (let i = 0; i <= title.length; i++) {
             setTitleText(title.slice(0, i));
