@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiRefreshCw, FiCopy, FiRepeat, FiPlus } from 'react-icons/fi';
+import { FiCopy, FiRepeat, FiPlus } from 'react-icons/fi';
 
 interface PaperSheetProps {
   onGenerateStory: (story: string) => void;
